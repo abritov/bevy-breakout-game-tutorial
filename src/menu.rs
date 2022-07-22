@@ -1,7 +1,8 @@
-use bevy::{
-    prelude::*,
-};
+use bevy::prelude::*;
 use iyes_loopless::prelude::*;
+
+use crate::state::GameState;
+use crate::common::despawn_entities_with;
 
 #[derive(Component)]
 struct MainMenu;
@@ -119,9 +120,15 @@ pub struct MenuPlugin;
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_startup_system(menu_setup)
-            .add_system(button_change_state)
-            .add_system(on_level1_button_pressed.run_if(on_pressed::<Level1Button>))
-            .add_system(on_exit_button_pressed.run_if(on_pressed::<ExitButton>));
+            .add_enter_system(GameState::Menu, menu_setup)
+            .add_exit_system(GameState::Menu, despawn_entities_with::<MainMenu>)
+            .add_system_set(
+                ConditionSet::new()
+                    .run_in_state(GameState::Menu)
+                    .with_system(button_change_state)
+                    .with_system(on_level1_button_pressed.run_if(on_pressed::<Level1Button>))
+                    .with_system(on_exit_button_pressed.run_if(on_pressed::<ExitButton>))
+                    .into()
+            );
     }
 }
