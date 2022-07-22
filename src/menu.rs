@@ -14,6 +14,8 @@ struct ExitButton;
 struct Level1Button;
 
 fn menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.insert_resource(ClearColor::default());
+
     let button_style = Style {
         justify_content: JustifyContent::Center,
         align_items: AlignItems::Center,
@@ -106,8 +108,8 @@ fn on_pressed<B: Component>(
     false
 }
 
-fn on_level1_button_pressed() {
-    println!("Level 1 button pressed");
+fn on_level1_button_pressed(mut commands: Commands) {
+    commands.insert_resource(NextState(GameState::Playing));
 }
 
 fn on_exit_button_pressed(mut ev: EventWriter<bevy::app::AppExit>) {
@@ -126,6 +128,7 @@ impl Plugin for MenuPlugin {
                 ConditionSet::new()
                     .run_in_state(GameState::Menu)
                     .with_system(button_change_state)
+                    .with_system(bevy::input::system::exit_on_esc_system)
                     .with_system(on_level1_button_pressed.run_if(on_pressed::<Level1Button>))
                     .with_system(on_exit_button_pressed.run_if(on_pressed::<ExitButton>))
                     .into()

@@ -1,6 +1,7 @@
 mod menu;
 mod common;
 mod state;
+mod game;
 
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
@@ -20,6 +21,6 @@ fn main() {
         .add_loopless_state(state::GameState::Menu)
         .add_startup_system(initial_setup)
         .add_plugin(menu::MenuPlugin)
-        .add_system(bevy::input::system::exit_on_esc_system)
+        .add_plugin(game::GamePlugin)
         .run();
 }
