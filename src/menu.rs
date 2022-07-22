@@ -1,6 +1,7 @@
 use bevy::{
     prelude::*,
 };
+use iyes_loopless::prelude::*;
 
 #[derive(Component)]
 struct MainMenu;
@@ -93,6 +94,25 @@ fn button_change_state(
     }
 }
 
+fn on_pressed<B: Component>(
+    query: Query<&Interaction, (Changed<Interaction>, With<Button>, With<B>)>,
+) -> bool {
+    for interaction in query.iter() {
+        if *interaction == Interaction::Clicked {
+            return true;
+        }
+    }
+    false
+}
+
+fn on_level1_button_pressed() {
+    println!("Level 1 button pressed");
+}
+
+fn on_exit_button_pressed(mut ev: EventWriter<bevy::app::AppExit>) {
+    ev.send(bevy::app::AppExit);
+}
+
 #[derive(Default)]
 pub struct MenuPlugin;
 
@@ -100,6 +120,8 @@ impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_startup_system(menu_setup)
-            .add_system(button_change_state);
+            .add_system(button_change_state)
+            .add_system(on_level1_button_pressed.run_if(on_pressed::<Level1Button>))
+            .add_system(on_exit_button_pressed.run_if(on_pressed::<ExitButton>));
     }
 }
