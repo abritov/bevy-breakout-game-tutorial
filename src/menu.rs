@@ -75,11 +75,31 @@ fn menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .push_children(&[level1_button, button_exit]);
 }
 
+fn button_change_state(
+    mut query: Query<(&Interaction, &mut UiColor), (Changed<Interaction>, With<Button>)>,
+) {
+    for (interaction, mut color) in query.iter_mut() {
+        match interaction {
+            Interaction::Clicked => {
+                *color = UiColor(Color::rgb(0.75, 0.75, 0.75));
+            }
+            Interaction::Hovered => {
+                *color = UiColor(Color::rgb(0.8, 0.8, 0.8));
+            }
+            Interaction::None => {
+                *color = UiColor(Color::rgb(1.0, 1.0, 1.0));
+            }
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct MenuPlugin;
 
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(menu_setup);
+        app
+            .add_startup_system(menu_setup)
+            .add_system(button_change_state);
     }
 }
