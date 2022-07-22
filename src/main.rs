@@ -1,3 +1,5 @@
+mod menu;
+
 use bevy::{
     prelude::*,
 };
@@ -15,6 +17,7 @@ fn main() {
         })
         .add_plugins(DefaultPlugins)
         .add_startup_system(initial_setup)
+        .add_plugin(menu::MenuPlugin)
         .add_system(bevy::input::system::exit_on_esc_system)
         .run();
 }
