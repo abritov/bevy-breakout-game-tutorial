@@ -9,6 +9,8 @@ use iyes_loopless::prelude::*;
 use crate::state::GameState;
 use crate::common::despawn_entities_with;
 
+const TIME_STEP: f32 = 1.0 / 60.0;
+
 const WALL_THICKNESS: f32 = 10.0;
 // x coordinates
 const LEFT_WALL: f32 = -450.;
@@ -96,6 +98,13 @@ impl WallBundle {
     }
 }
 
+fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>) {
+    for (mut transform, velocity) in query.iter_mut() {
+        transform.translation.x += velocity.x * TIME_STEP;
+        transform.translation.y += velocity.y * TIME_STEP;
+    }
+}
+
 fn esc_pressed(
     mut keyboard_input_events: EventReader<KeyboardInput>,
 ) -> bool {
@@ -156,6 +165,7 @@ impl Plugin for GamePlugin {
             .add_system_set(
                 ConditionSet::new()
                 .run_in_state(GameState::Playing)
+                .with_system(apply_velocity)
                 .with_system(return_to_menu.run_if(esc_pressed))
                 .into()
             );
