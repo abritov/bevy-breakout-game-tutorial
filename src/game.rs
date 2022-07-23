@@ -1,14 +1,13 @@
 use bevy::{
     prelude::*,
     input::ElementState,
-    input::keyboard::KeyboardInput
+    input::keyboard::KeyboardInput,
+    math::{const_vec2, const_vec3}
 };
 use iyes_loopless::prelude::*;
 
 use crate::state::GameState;
 use crate::common::despawn_entities_with;
-
-const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
 
 const WALL_THICKNESS: f32 = 10.0;
 // x coordinates
@@ -18,7 +17,20 @@ const RIGHT_WALL: f32 = 450.;
 const BOTTOM_WALL: f32 = -300.;
 const TOP_WALL: f32 = 300.;
 
+const BALL_STARTING_POSITION: Vec3 = const_vec3!([0.0, -50.0, 1.0]);
+const BALL_SIZE: Vec3 = const_vec3!([30.0, 30.0, 0.0]);
+const BALL_SPEED: f32 = 400.0;
+const INITIAL_BALL_DIRECTION: Vec2 = const_vec2!([0.5, -0.5]);
+
+const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.9, 0.9);
 const WALL_COLOR: Color = Color::rgb(0.8, 0.8, 0.8);
+const BALL_COLOR: Color = Color::rgb(1.0, 0.5, 0.5);
+
+#[derive(Component)]
+struct Ball;
+
+#[derive(Component, Deref, DerefMut)]
+struct Velocity(Vec2);
 
 #[derive(Component)]
 struct Collider;
@@ -107,10 +119,30 @@ struct GameComponent;
 fn setup_game(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(ClearColor(BACKGROUND_COLOR));
 
+    // Walls
     commands.spawn_bundle(WallBundle::new(WallLocation::Left)).insert(GameComponent);
     commands.spawn_bundle(WallBundle::new(WallLocation::Right)).insert(GameComponent);
     commands.spawn_bundle(WallBundle::new(WallLocation::Bottom)).insert(GameComponent);
     commands.spawn_bundle(WallBundle::new(WallLocation::Top)).insert(GameComponent);
+
+    // Ball
+    commands
+        .spawn()
+        .insert(Ball)
+        .insert_bundle(SpriteBundle {
+            transform: Transform {
+                scale: BALL_SIZE,
+                translation: BALL_STARTING_POSITION,
+                ..default()
+            },
+            sprite: Sprite {
+                color: BALL_COLOR,
+                ..default()
+            },
+            ..default()
+        })
+        .insert(Velocity(INITIAL_BALL_DIRECTION.normalize() * BALL_SPEED))
+        .insert(GameComponent);
 }
 
 #[derive(Default)]
