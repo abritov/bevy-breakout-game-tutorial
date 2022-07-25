@@ -2,7 +2,8 @@ use bevy::{
     prelude::*,
     input::ElementState,
     input::keyboard::KeyboardInput,
-    math::{const_vec2, const_vec3}
+    math::{const_vec2, const_vec3},
+    sprite::collide_aabb::{collide, Collision},
 };
 use iyes_loopless::prelude::*;
 
@@ -98,6 +99,46 @@ impl WallBundle {
     }
 }
 
+
+fn process_collisions(
+    mut ball_query: Query<(&mut Velocity, &Transform), With<Ball>>,
+    collider_query: Query<&Transform, With<Collider>>,
+) {
+    let (mut ball_velocity, ball_transform) = ball_query.single_mut();
+    let ball_size = ball_transform.scale.truncate();
+
+    for transform in collider_query.iter() {
+        let collision = collide(
+            ball_transform.translation,
+            ball_size,
+            transform.translation,
+            transform.scale.truncate(),
+        );
+        if let Some(collision) = collision {
+
+            let mut reflect_x = false;
+            let mut reflect_y = false;
+
+            // only reflect if the ball's velocity is going in the opposite direction of the
+            // collision
+            match collision {
+                Collision::Left => reflect_x = ball_velocity.x > 0.0,
+                Collision::Right => reflect_x = ball_velocity.x < 0.0,
+                Collision::Top => reflect_y = ball_velocity.y < 0.0,
+                Collision::Bottom => reflect_y = ball_velocity.y > 0.0,
+                Collision::Inside => { /* do nothing */ }
+            }
+            if reflect_x {
+                ball_velocity.x = -ball_velocity.x;
+            }
+            if reflect_y {
+                ball_velocity.y = -ball_velocity.y;
+            }
+        }
+    }
+}
+
+
 fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>) {
     for (mut transform, velocity) in query.iter_mut() {
         transform.translation.x += velocity.x * TIME_STEP;
@@ -159,13 +200,28 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
+        let mut physics = SystemStage::parallel();
+        physics.add_system_set(
+            ConditionSet::new()
+                .run_in_state(GameState::Playing)
+                .with_system(apply_velocity)
+                .with_system(process_collisions)
+                .into()
+        );
         app
             .add_enter_system(GameState::Playing, setup_game)
             .add_exit_system(GameState::Playing, despawn_entities_with::<GameComponent>)
+            .add_stage_before(
+                CoreStage::Update,
+                "FixedUpdate",
+                FixedTimestepStage::from_stage(
+                    std::time::Duration::from_secs_f32(TIME_STEP),
+                    physics
+                )
+            )
             .add_system_set(
                 ConditionSet::new()
                 .run_in_state(GameState::Playing)
-                .with_system(apply_velocity)
                 .with_system(return_to_menu.run_if(esc_pressed))
                 .into()
             );
